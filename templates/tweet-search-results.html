@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Tweet Search Results</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+        <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}"">
+    </head>
+    <body>
+        <main id="main-box" style="margin: 60px 400px;">
+            <header class="p-3 mb-3 border-bottom" id="header" >
+                <a class="navbar-brand" href="/">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-house-door-fill" viewBox="0 0 16 16">
+                    <path d="M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5"/>
+                  </svg>
+                </a>
+            </header>
+            <section style="margin: 30px 0; padding-left: 30px;">
+                {% if tweet_results %}
+                    <h5>Search results</h5>
+                    {% for tweet in tweet_results %}
+                        <p>{{ tweet.get("body") }}</p>
+                        {% if tweet.get('image_url') %}
+                            <img src="{{ tweet.get('image_url') }}" alt="Image for this tweet" height="100px" width="100px"><br>
+                        {% endif %}
+                        <p style="font-size: smaller; font-style: italic; text-align: right;">{{ tweet.get("username") }} on {{ tweet.get("date") }}</p>
+                        <hr>
+                    {% endfor %}
+                {% else %}
+                    <p>No tweet with matching content found.</p>
+                {% endif %}
+            </section>
+        </main>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    </body>
+</html>
