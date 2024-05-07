@@ -1,0 +1,10 @@
+#header {
+    position: fixed;
+    top: 0;
+    padding:40px;
+    background: lightblue;
+  }
+
+  #sign-out {
+    position: fixed;
+  }
