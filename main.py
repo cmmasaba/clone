@@ -101,7 +101,7 @@ def sort_tweets(tweet):
     except ValueError:
         return tweet.get().get("date")
 
-def generate_timeline(user_token):
+async def generate_timeline(user_token):
     """Generate a timeline for the user of the 20 latest tweets from the user's tweets and the people the user is following."""
     user = firestore_db.collection('User').document(user_token['user_id'])
     following = user.get().get("following")
@@ -185,7 +185,7 @@ async def root(request: Request):
         user_token=user_token,
         error_message=error_message,
         user_info=user,
-        tweets=generate_timeline(user_token)
+        tweets=await generate_timeline(user_token)
     )
 
     return templates.TemplateResponse('main.html', context=context_dict)
