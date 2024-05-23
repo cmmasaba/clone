@@ -361,10 +361,7 @@ async def searchTweet(request: Request):
     content_query = form['content']
 
     user = getUser(user_token).get()
-    matched_content = []
-    for tweet in firestore_db.collection('Tweet').stream():
-        if tweet.get('body')[:len(content_query)].lower() == content_query.lower():
-            matched_content.append(tweet)
+    matched_content = [tweet for tweet in firestore_db.collection('Tweet').stream() if tweet.get('body')[:len(content_query)].lower() == content_query.lower()]
 
     context_dict = dict(
         request=request,
