@@ -8,7 +8,6 @@ This application is a replica of Twitter, providing basic facilities for creatin
 - HTML
 - CSS
 - Bootstrap
-- App Engine for hosting
 - GCP Firestore for storage
 - GCP Firebase for authentication
 - GCP Cloud Storage for image storage
