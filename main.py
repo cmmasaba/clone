@@ -185,7 +185,7 @@ async def root(request: Request):
         user_token=user_token,
         error_message=error_message,
         user_info=user,
-        tweets=await generate_timeline(user_token)
+        tweets= await generate_timeline(user_token)
     )
 
     return templates.TemplateResponse('main.html', context=context_dict)
