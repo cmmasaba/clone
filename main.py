@@ -320,7 +320,7 @@ async def addTweet(request: Request):
 async def searchUsername(request: Request):
     """Route (POST) for searching a username in the database."""
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
@@ -328,13 +328,13 @@ async def searchUsername(request: Request):
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
-            error_message=error_message,
+            errors=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
+        return templates.TemplateResponse('main.html', context=context)
     
     form = await request.form()
     username_query = form['username']
@@ -345,15 +345,15 @@ async def searchUsername(request: Request):
         if user.get('username')[:len(username_query)].lower() == username_query.lower():
             matched_users.append(user)
 
-    context_dict = dict(
+    context = dict(
         request=request,
         user_token=user_token,
-        errors=None,
+        errors=errors,
         user_info=user,
         user_results=matched_users,
     )
 
-    return templates.TemplateResponse('user-search-results.html', context=context_dict)
+    return templates.TemplateResponse('user-search-results.html', context=context)
 
 @app.post("/search-tweet", response_class=HTMLResponse)
 async def searchTweet(request: Request):
