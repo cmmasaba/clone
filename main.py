@@ -359,7 +359,7 @@ async def searchUsername(request: Request):
 async def searchTweet(request: Request):
     """Route (POST) for searching content in tweets."""
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
@@ -367,13 +367,13 @@ async def searchTweet(request: Request):
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
-            error_message=error_message,
+            error_message=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
+        return templates.TemplateResponse('main.html', context=context)
     
     form = await request.form()
     content_query = form['content']
@@ -381,14 +381,14 @@ async def searchTweet(request: Request):
     user = getUser(user_token).get()
     matched_content = [tweet for tweet in firestore_db.collection('Tweet').stream() if tweet.get('body')[:len(content_query)].lower() == content_query.lower()]
 
-    context_dict = dict(
+    context = dict(
         request=request,
         user_token=user_token,
         errors=None,
         user_info=user,
         tweet_results=sorted(matched_content, key=sort_tweets, reverse=True),
     )
-    return templates.TemplateResponse('tweet-search-results.html', context=context_dict)
+    return templates.TemplateResponse('tweet-search-results.html', context=context)
 
 @app.get("/view-profile/{person}", response_class=HTMLResponse)
 async def viewOthersProfile(request: Request, person):
