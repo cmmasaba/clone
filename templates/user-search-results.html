@@ -17,6 +17,11 @@
                 </a>
             </header>
             <section>
+                {% if errors %}
+                    <ul>
+                        <li class="alert alert-danger">{{ errors }}</li>
+                    </ul>
+                {% endif %}
                 {% if user_results %}
                     <h5>Search results</h5>
                     {% for user in user_results %}

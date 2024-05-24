@@ -118,26 +118,31 @@ async def generate_timeline(user_token):
 async def setUsername(request: Request):
     """Route (GET) for setting the username when a user logs in for the first time."""
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token).get()
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        return templates.TemplateResponse('main.html', {"request": request, "user_token": None, "error_message": None, "user_info": None})
-    
-    user = getUser(user_token).get()
+        context = dict(
+            request=request,
+            user_token=None,
+            errors=errors,
+            user_info=None
+        )
+        return templates.TemplateResponse('main.html', context=context)
 
-    context_dict = dict(
+    context = dict(
         request=request,
         user_token=user_token,
-        error_message=error_message,
+        error_message=errors,
         user_info=user,
     )
 
-    return templates.TemplateResponse('set-username.html', context=context_dict)
+    return templates.TemplateResponse('set-username.html', context=context)
 
 @app.post('/set-username', response_class=HTMLResponse)
 async def setUsername(request: Request):
@@ -147,6 +152,7 @@ async def setUsername(request: Request):
     """
     id_token = request.cookies.get("token")
     user_token = None
+    errors: str | None = None
 
     user_token = validateFirebaseToken(id_token)
 
@@ -154,8 +160,15 @@ async def setUsername(request: Request):
 
     user_exists = firestore_db.collection("User").where(filter=FieldFilter('username', '==', form['username'])).get()
     if user_exists:
-        errors = ['This username is already taken.']
-        return templates.TemplateResponse('set-username.html', {"request": request, "user_token": None, "errors": errors, "user_info": None,})
+        errors = 'This username is already taken.'
+        context = dict(
+            request=request,
+            user_token=None,
+            errors=errors,
+            user_info=None
+        )
+        return templates.TemplateResponse('set-username.html', context=context)
+
     firestore_db.collection('User').document(user_token['user_id']).update({"username": form["username"]})
     addDirectory(form['username'])
     return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
@@ -364,6 +377,7 @@ async def searchTweet(request: Request):
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token).get()
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
@@ -378,7 +392,6 @@ async def searchTweet(request: Request):
     form = await request.form()
     content_query = form['content']
 
-    user = getUser(user_token).get()
     matched_content = [tweet for tweet in firestore_db.collection('Tweet').stream() if tweet.get('body')[:len(content_query)].lower() == content_query.lower()]
 
     context = dict(
@@ -403,24 +416,24 @@ async def viewOthersProfile(request: Request, person):
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token).get()
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
-            error_message=errors,
+            errors=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
-    
-    user = getUser(user_token).get()
+        return templates.TemplateResponse('main.html', context=context)
+
     *_, person_query = firestore_db.collection('User').where(filter=FieldFilter('username', '==', person)).get()
 
-    context_dict = dict(
+    context = dict(
         request=request,
         user_token=user_token,
-        error_message=errors,
+        errors=errors,
         user_info=user,
         personal_info=person_query.get("username"),
         is_following=person in user.get("following"),
@@ -428,7 +441,7 @@ async def viewOthersProfile(request: Request, person):
         followers=len(person_query.get("followers")),
         tweets=sorted(person_query.get("tweets")[-10] if len(person_query.get('tweets')) > 10 else person_query.get('tweets'), key=sort_tweets, reverse=True),
     )
-    return templates.TemplateResponse('view-profile.html', context=context_dict)
+    return templates.TemplateResponse('view-profile.html', context=context)
 
 @app.post("/follow/{person}", response_class=HTMLResponse)
 async def follow(request: Request, person):
@@ -437,23 +450,23 @@ async def follow(request: Request, person):
         person -> str: the username of the user to follow.
     """
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token)
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
-            error_message=error_message,
+            errors=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
-    
-    user = getUser(user_token)
+        return templates.TemplateResponse('main.html', context=context)
+
     *_, person_query = firestore_db.collection('User').where(filter=FieldFilter('username', '==', person)).get()  # query the user snapshot document matching the name given, and unpack the list elements taking only the last element and discarding the rest
     person_followers = person_query.get("followers")  # get the followers list associated with the user
     person_followers.append(user.get().get("username"))  # add a new element to the list of followers
@@ -474,20 +487,21 @@ async def unfollow(request: Request, person):
     id_token = request.cookies.get("token")
     user_token = None
     user = None
+    errors: str | None = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token)
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
-            error_message=None,
+            errors=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
+        return templates.TemplateResponse('main.html', context=context)
 
-    user = getUser(user_token)
     *_, person_query = firestore_db.collection('User').where(filter=FieldFilter('username', '==', person)).get()  # query the user snapshot document matching the name given, and unpack the list elements taking only the last element and discarding the rest
     person_followers = person_query.get("followers")  # get the followers list associated with the user
     person_followers.remove(user.get().get("username"))  # remove the username of this user from the list of followers
@@ -507,34 +521,33 @@ async def editTweet(request: Request, tweet_index):
 
     Return a form prefilled with the current tweet content."""
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token).get()
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
-            error_message=error_message,
+            errors=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
-    
-    user = getUser(user_token).get()
+        return templates.TemplateResponse('main.html', context=context)
 
-    context_dict = dict(
+    context = dict(
         request=request,
         user_token=user_token,
-        error_message=error_message,
+        errors=errors,
         user_info=user,
         index=len(user.get("tweets")) - 1 - int(tweet_index),
         tweet=user.get("tweets")[len(user.get("tweets")) - 1 - int(tweet_index)],
     )
     
-    return templates.TemplateResponse('edit-tweet.html', context=context_dict)
+    return templates.TemplateResponse('edit-tweet.html', context=context)
 
 @app.post('/edit-tweet', response_class=HTMLResponse)
 async def editTweet(request: Request):
@@ -543,25 +556,24 @@ async def editTweet(request: Request):
     Saves the updated tweet content to the datatbase.
     """
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token)
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
-            error_message=error_message,
+            error=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
-    
-    user = getUser(user_token)
-    users_tweets = user.get().get('tweets')
+        return templates.TemplateResponse('main.html', context=context)
 
+    users_tweets = user.get().get('tweets')
     form = await request.form()
     tweet_index = int(form['index'])
     updated_tweet = form['tweet']
@@ -585,17 +597,17 @@ async def editTweet(request: Request):
     
     users_tweets[tweet_index].update(tweet_data)
 
-    context_dict = dict(
+    context = dict(
         request=request,
         user_token=user_token,
-        error_message=error_message,
+        errors=errors,
         user_info=user.get(),
         personal_info=user.get().get("username"),
         following=len(user.get().get("following")),
         followers=len(user.get().get("followers")),
         tweets=user.get().get('tweets'),
     )
-    return templates.TemplateResponse('view-profile.html', context=context_dict)
+    return templates.TemplateResponse('view-profile.html', context=context)
 
 @app.post('/delete-tweet', response_class=HTMLResponse)
 async def deleteTweet(request: Request):
@@ -604,25 +616,25 @@ async def deleteTweet(request: Request):
     Deletes the tweet from the database and from the `tweets` list associated with the user.
     """
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token)
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
-            error_message=error_message,
+            errors=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
+        return templates.TemplateResponse('main.html', context=context)
     
     form = await request.form()
-    
-    user = getUser(user_token)
+
     tweet_index = len(user.get().get("tweets")) - 1 - int(form['index'])
     user_tweets = user.get().get('tweets')
 
@@ -635,14 +647,14 @@ async def deleteTweet(request: Request):
     del user_tweets[tweet_index]
     user.update({'tweets': user_tweets})
 
-    context_dict = dict(
+    context = dict(
         request=request,
         user_token=user_token,
-        error_message=error_message,
+        errors=errors,
         user_info=user.get(),
         personal_info=user.get().get("username"),
         following=len(user.get().get("following")),
         followers=len(user.get().get("followers")),
         tweets=user.get().get('tweets'),
     )
-    return templates.TemplateResponse('view-profile.html', context=context_dict)
+    return templates.TemplateResponse('view-profile.html', context=context)

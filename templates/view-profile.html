@@ -17,6 +17,11 @@
                 </a>
             </header>
             <section>
+                {% if errors %}
+                    <ul>
+                        <li class="alert alert-danger">{{ errors }}</li>
+                    </ul>
+                {% endif %}
                 {% if user_info.get("username") != personal_info %}
                     <h5>Personal Info</h5>
                     <p>username: {{ personal_info }}</p>

@@ -17,6 +17,11 @@
                 </a>
             </header>
             <section style="margin: 30px 0; padding-left: 30px;">
+                {% if errors %}
+                    <ul>
+                        <li class="alert alert-danger">{{ errors }}</li>
+                    </ul>
+                {% endif %}
                 {% if tweet_results %}
                     <h5>Search results</h5>
                     {% for tweet in tweet_results %}

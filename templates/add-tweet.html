@@ -20,9 +20,7 @@
                 {% block content %}
                     {% if errors %}
                         <ul>
-                            {% for error in errors %}
-                                <li class="alert alert-danger">{{ error }}</li>
-                            {% endfor %}
+                            <li class="alert alert-danger">{{ errors }}</li>
                         </ul>
                     {% endif %}
                     <form class="row mb-3" action="/post" method="post" enctype="multipart/form-data">
