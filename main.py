@@ -123,6 +123,7 @@ async def setUsername(request: Request):
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token).get()
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
@@ -133,8 +134,6 @@ async def setUsername(request: Request):
             user_info=None
         )
         return templates.TemplateResponse('main.html', context=context)
-    
-    user = getUser(user_token).get()
 
     context = dict(
         request=request,
