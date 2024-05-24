@@ -508,34 +508,33 @@ async def editTweet(request: Request, tweet_index):
 
     Return a form prefilled with the current tweet content."""
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token).get()
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
-            error_message=error_message,
+            errors=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
-    
-    user = getUser(user_token).get()
+        return templates.TemplateResponse('main.html', context=context)
 
-    context_dict = dict(
+    context = dict(
         request=request,
         user_token=user_token,
-        error_message=error_message,
+        errors=errors,
         user_info=user,
         index=len(user.get("tweets")) - 1 - int(tweet_index),
         tweet=user.get("tweets")[len(user.get("tweets")) - 1 - int(tweet_index)],
     )
     
-    return templates.TemplateResponse('edit-tweet.html', context=context_dict)
+    return templates.TemplateResponse('edit-tweet.html', context=context)
 
 @app.post('/edit-tweet', response_class=HTMLResponse)
 async def editTweet(request: Request):
