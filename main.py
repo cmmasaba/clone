@@ -276,23 +276,23 @@ async def addTweet(request: Request):
     Saves the associated tweet to the db.
     """
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token)
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
-            error_message=error_message,
+            error_message=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
-    
-    user = getUser(user_token)
+        return templates.TemplateResponse('main.html', context=context)
+
     user_name = user.get().get("username")
     image_url = ''
     blob_name = ''
