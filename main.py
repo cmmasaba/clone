@@ -403,24 +403,24 @@ async def viewOthersProfile(request: Request, person):
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token).get()
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
         context_dict = dict(
             request=request,
             user_token=user_token,
-            error_message=errors,
+            errors=errors,
             user_info=user,
         )
         return templates.TemplateResponse('main.html', context=context_dict)
-    
-    user = getUser(user_token).get()
+
     *_, person_query = firestore_db.collection('User').where(filter=FieldFilter('username', '==', person)).get()
 
     context_dict = dict(
         request=request,
         user_token=user_token,
-        error_message=errors,
+        errors=errors,
         user_info=user,
         personal_info=person_query.get("username"),
         is_following=person in user.get("following"),
