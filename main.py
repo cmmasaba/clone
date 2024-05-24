@@ -147,6 +147,7 @@ async def setUsername(request: Request):
     """
     id_token = request.cookies.get("token")
     user_token = None
+    errors: str | None = None
 
     user_token = validateFirebaseToken(id_token)
 
@@ -154,8 +155,14 @@ async def setUsername(request: Request):
 
     user_exists = firestore_db.collection("User").where(filter=FieldFilter('username', '==', form['username'])).get()
     if user_exists:
-        errors = ['This username is already taken.']
-        return templates.TemplateResponse('set-username.html', {"request": request, "user_token": None, "errors": errors, "user_info": None,})
+        errors = 'This username is already taken.'
+        context = dict(
+            request=request,
+            user_token=None,
+            errors=errors,
+            user_info=None
+        )
+        return templates.TemplateResponse('set-username.html', context=context)
     firestore_db.collection('User').document(user_token['user_id']).update({"username": form["username"]})
     addDirectory(form['username'])
     return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
