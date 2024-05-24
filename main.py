@@ -364,6 +364,7 @@ async def searchTweet(request: Request):
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token).get()
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
@@ -378,7 +379,6 @@ async def searchTweet(request: Request):
     form = await request.form()
     content_query = form['content']
 
-    user = getUser(user_token).get()
     matched_content = [tweet for tweet in firestore_db.collection('Tweet').stream() if tweet.get('body')[:len(content_query)].lower() == content_query.lower()]
 
     context = dict(
