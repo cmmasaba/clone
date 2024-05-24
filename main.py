@@ -407,17 +407,17 @@ async def viewOthersProfile(request: Request, person):
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
             errors=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
+        return templates.TemplateResponse('main.html', context=context)
 
     *_, person_query = firestore_db.collection('User').where(filter=FieldFilter('username', '==', person)).get()
 
-    context_dict = dict(
+    context = dict(
         request=request,
         user_token=user_token,
         errors=errors,
@@ -428,7 +428,7 @@ async def viewOthersProfile(request: Request, person):
         followers=len(person_query.get("followers")),
         tweets=sorted(person_query.get("tweets")[-10] if len(person_query.get('tweets')) > 10 else person_query.get('tweets'), key=sort_tweets, reverse=True),
     )
-    return templates.TemplateResponse('view-profile.html', context=context_dict)
+    return templates.TemplateResponse('view-profile.html', context=context)
 
 @app.post("/follow/{person}", response_class=HTMLResponse)
 async def follow(request: Request, person):
