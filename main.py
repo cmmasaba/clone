@@ -437,23 +437,23 @@ async def follow(request: Request, person):
         person -> str: the username of the user to follow.
     """
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token)
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
-            error_message=error_message,
+            errors=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
-    
-    user = getUser(user_token)
+        return templates.TemplateResponse('main.html', context=context)
+
     *_, person_query = firestore_db.collection('User').where(filter=FieldFilter('username', '==', person)).get()  # query the user snapshot document matching the name given, and unpack the list elements taking only the last element and discarding the rest
     person_followers = person_query.get("followers")  # get the followers list associated with the user
     person_followers.append(user.get().get("username"))  # add a new element to the list of followers
