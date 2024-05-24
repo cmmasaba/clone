@@ -543,25 +543,24 @@ async def editTweet(request: Request):
     Saves the updated tweet content to the datatbase.
     """
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token)
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
-            error_message=error_message,
+            error=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
-    
-    user = getUser(user_token)
-    users_tweets = user.get().get('tweets')
+        return templates.TemplateResponse('main.html', context=context)
 
+    users_tweets = user.get().get('tweets')
     form = await request.form()
     tweet_index = int(form['index'])
     updated_tweet = form['tweet']
@@ -585,17 +584,17 @@ async def editTweet(request: Request):
     
     users_tweets[tweet_index].update(tweet_data)
 
-    context_dict = dict(
+    context = dict(
         request=request,
         user_token=user_token,
-        error_message=error_message,
+        errors=errors,
         user_info=user.get(),
         personal_info=user.get().get("username"),
         following=len(user.get().get("following")),
         followers=len(user.get().get("followers")),
         tweets=user.get().get('tweets'),
     )
-    return templates.TemplateResponse('view-profile.html', context=context_dict)
+    return templates.TemplateResponse('view-profile.html', context=context)
 
 @app.post('/delete-tweet', response_class=HTMLResponse)
 async def deleteTweet(request: Request):
