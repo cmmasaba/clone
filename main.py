@@ -474,20 +474,21 @@ async def unfollow(request: Request, person):
     id_token = request.cookies.get("token")
     user_token = None
     user = None
+    errors: str | None = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token)
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
-            error_message=None,
+            errors=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
+        return templates.TemplateResponse('main.html', context=context)
 
-    user = getUser(user_token)
     *_, person_query = firestore_db.collection('User').where(filter=FieldFilter('username', '==', person)).get()  # query the user snapshot document matching the name given, and unpack the list elements taking only the last element and discarding the rest
     person_followers = person_query.get("followers")  # get the followers list associated with the user
     person_followers.remove(user.get().get("username"))  # remove the username of this user from the list of followers
