@@ -118,7 +118,7 @@ async def generate_timeline(user_token):
 async def setUsername(request: Request):
     """Route (GET) for setting the username when a user logs in for the first time."""
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
@@ -126,18 +126,24 @@ async def setUsername(request: Request):
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        return templates.TemplateResponse('main.html', {"request": request, "user_token": None, "error_message": None, "user_info": None})
+        context = dict(
+            request=request,
+            user_token=None,
+            errors=errors,
+            user_info=None
+        )
+        return templates.TemplateResponse('main.html', context=context)
     
     user = getUser(user_token).get()
 
-    context_dict = dict(
+    context = dict(
         request=request,
         user_token=user_token,
-        error_message=error_message,
+        error_message=errors,
         user_info=user,
     )
 
-    return templates.TemplateResponse('set-username.html', context=context_dict)
+    return templates.TemplateResponse('set-username.html', context=context)
 
 @app.post('/set-username', response_class=HTMLResponse)
 async def setUsername(request: Request):
@@ -163,6 +169,7 @@ async def setUsername(request: Request):
             user_info=None
         )
         return templates.TemplateResponse('set-username.html', context=context)
+
     firestore_db.collection('User').document(user_token['user_id']).update({"username": form["username"]})
     addDirectory(form['username'])
     return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
