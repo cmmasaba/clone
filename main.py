@@ -206,7 +206,7 @@ async def root(request: Request):
 async def viewYourProfile(request: Request):
     """Route (GET) for displaying the user's own profile."""
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
@@ -214,21 +214,27 @@ async def viewYourProfile(request: Request):
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        return templates.TemplateResponse('main.html', {"request": request, "user_token": None, "error_message": None, "user_info": None})
+        context = dict(
+            request=request,
+            user_token=None,
+            errors=errors,
+            user_info=None
+        )
+        return templates.TemplateResponse('main.html', context=context)
     
     user = getUser(user_token).get()
 
-    context_dict = dict(
+    context = dict(
         request=request,
         user_token=user_token,
-        error_message=error_message,
+        error=errors,
         user_info=user,
         personal_info=user.get("username"),
         following=len(user.get("following")),
         followers=len(user.get("followers")),
         tweets=sorted(user.get('tweets'), key=sort_tweets, reverse=True),
     )
-    return templates.TemplateResponse('view-profile.html', context=context_dict)
+    return templates.TemplateResponse('view-profile.html', context=context)
 
 @app.get("/post", response_class=HTMLResponse)
 async def addTweet(request: Request):
@@ -237,31 +243,31 @@ async def addTweet(request: Request):
     Return the html form where user types the tweet.
     """
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token).get()
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
-        context_dict = dict(
+        context = dict(
             request=request,
             user_token=user_token,
-            error_message=error_message,
+            error_message=errors,
             user_info=user,
         )
-        return templates.TemplateResponse('main.html', context=context_dict)
-    user = getUser(user_token).get()
+        return templates.TemplateResponse('main.html', context=context)
     
-    context_dict = dict(
+    context = dict(
         request=request,
         user_token=user_token,
         errors=None,
         user_info=user,
     )
 
-    return templates.TemplateResponse('add-tweet.html', context=context_dict)
+    return templates.TemplateResponse('add-tweet.html', context=context)
 
 @app.post("/post", response_class=HTMLResponse)
 async def addTweet(request: Request):
