@@ -325,6 +325,7 @@ async def searchUsername(request: Request):
     user = None
 
     user_token = validateFirebaseToken(id_token)
+    user = getUser(user_token).get()
 
     # Validate user token - check if we have a valid firebase login if not return the template with empty data as we will show the login box
     if not user_token:
@@ -339,7 +340,6 @@ async def searchUsername(request: Request):
     form = await request.form()
     username_query = form['username']
 
-    user = getUser(user_token).get()
     matched_users = []
     for user in firestore_db.collection('User').stream():
         if user.get('username')[:len(username_query)].lower() == username_query.lower():
@@ -370,7 +370,7 @@ async def searchTweet(request: Request):
         context = dict(
             request=request,
             user_token=user_token,
-            error_message=errors,
+            errors=errors,
             user_info=user,
         )
         return templates.TemplateResponse('main.html', context=context)
@@ -384,7 +384,7 @@ async def searchTweet(request: Request):
     context = dict(
         request=request,
         user_token=user_token,
-        errors=None,
+        errors=errors,
         user_info=user,
         tweet_results=sorted(matched_content, key=sort_tweets, reverse=True),
     )
@@ -398,7 +398,7 @@ async def viewOthersProfile(request: Request, person):
         person -> str: the username of the user's profile to view.
     """
     id_token = request.cookies.get("token")
-    error_message = "No error here"
+    errors: str | None = None
     user_token = None
     user = None
 
@@ -409,7 +409,7 @@ async def viewOthersProfile(request: Request, person):
         context_dict = dict(
             request=request,
             user_token=user_token,
-            error_message=error_message,
+            error_message=errors,
             user_info=user,
         )
         return templates.TemplateResponse('main.html', context=context_dict)
@@ -420,7 +420,7 @@ async def viewOthersProfile(request: Request, person):
     context_dict = dict(
         request=request,
         user_token=user_token,
-        error_message=error_message,
+        error_message=errors,
         user_info=user,
         personal_info=person_query.get("username"),
         is_following=person in user.get("following"),
