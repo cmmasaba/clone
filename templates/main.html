@@ -87,6 +87,11 @@
                         </header>
                     </section>
                     <section id="timeline" style="margin: 100px 200px;">
+                        {% if errors %}
+                            <ul>
+                                <li class="alert alert-danger">{{ errors }}</li>
+                            </ul>
+                        {% endif %}
                         {% for tweet in tweets %}
                             <p>{{ tweet.get("body") }}</p>
                             {% if tweet.get('image_url') %}
